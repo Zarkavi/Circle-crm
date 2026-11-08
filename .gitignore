@@ -5,3 +5,4 @@ dev-dist
 .env.local
 *.zip
 screenshot*.png
+*.tsbuildinfo
