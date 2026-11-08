@@ -16,6 +16,7 @@ export interface Person extends Base {
   notes?: string | null;
   keep_in_touch_days?: number | null;
   favorite: boolean;
+  photo_path?: string | null;
 }
 
 export interface Job extends Base {

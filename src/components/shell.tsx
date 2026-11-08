@@ -6,6 +6,7 @@ import { useQuickAdd } from "@/components/quick-add";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { todayISO } from "@/lib/dates";
+import { t } from "@/lib/i18n";
 
 const NAV = [
   { to: "/", label: "Today", icon: Home, end: true },
@@ -21,7 +22,7 @@ export function Logo({ className }: { className?: string }) {
       <span className="relative grid size-7 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 shadow-md shadow-violet-500/30">
         <span className="size-3 rounded-full border-2 border-white" />
       </span>
-      Circle
+      {t("Circle")}
     </div>
   );
 }
@@ -38,20 +39,20 @@ export function Shell() {
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-card/50 p-4 md:flex">
         <Logo className="px-2 pb-6 pt-1 text-lg" />
-        <Button onClick={qa.openMenu} className="mb-4 w-full"><Plus /> Add</Button>
+        <Button onClick={qa.openMenu} className="mb-4 w-full"><Plus /> {t("Add")}</Button>
         <nav className="grid gap-0.5">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end}
               className={({ isActive }) => cn("flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground",
                 isActive && "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground")}>
-              <Icon className="size-4" />{label}
+              <Icon className="size-4" />{t(label)}
               {to === "/reminders" && due > 0 && <span className="ml-auto rounded-full bg-primary px-1.5 text-[11px] text-primary-foreground">{due}</span>}
             </NavLink>
           ))}
         </nav>
         {mode === "demo" && (
           <div className="mt-auto rounded-xl border border-dashed p-3 text-xs text-muted-foreground">
-            <b className="text-foreground">Demo mode.</b> Data is stored only in this browser. Add Supabase keys to sync and sign in.
+            <b className="text-foreground">{t("Demo mode.")}</b> {t("Data is stored only in this browser. Add Supabase keys to sync and sign in.")}
           </div>
         )}
       </aside>
@@ -59,14 +60,14 @@ export function Shell() {
       <main className="min-w-0 flex-1 overflow-x-clip pb-28 md:pb-10">
         {mode === "demo" && (
           <div className="pt-safe bg-accent text-center text-[11px] font-medium text-accent-foreground md:hidden">
-            <div className="py-1">Demo mode · data stays on this device</div>
+            <div className="py-1">{t("Demo mode · data stays on this device")}</div>
           </div>
         )}
         {error ? (
           <div className="mx-auto max-w-md p-8 text-center">
-            <p className="font-medium">Couldn't load your data</p>
+            <p className="font-medium">{t("Couldn't load your data")}</p>
             <p className="mt-1 text-sm text-muted-foreground">{error}</p>
-            <Button className="mt-4" onClick={reload}>Try again</Button>
+            <Button className="mt-4" onClick={reload}>{t("Try again")}</Button>
           </div>
         ) : loading ? (
           <div className="mx-auto grid max-w-3xl gap-3 p-6">
@@ -82,7 +83,7 @@ export function Shell() {
         <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-center px-2">
           {NAV.slice(0, 2).map((n) => <Tab key={n.to} {...n} />)}
           <div className="grid place-items-center">
-            <button onClick={qa.openMenu} aria-label="Add"
+            <button onClick={qa.openMenu} aria-label={t("Add")}
               className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-500/30 transition active:scale-90">
               <Plus className="size-6" />
             </button>
@@ -99,7 +100,7 @@ function Tab({ to, label, icon: Icon, end, badge = 0 }: { to: string; label: str
     <NavLink to={to} end={end}
       className={({ isActive }) => cn("relative flex flex-col items-center gap-0.5 text-[10px] font-medium text-muted-foreground transition", isActive && "text-primary")}>
       <Icon className="size-[22px]" strokeWidth={1.8} />
-      {label}
+      {t(label)}
       {badge > 0 && <span className="absolute -top-1 right-[calc(50%-18px)] min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 text-primary-foreground">{badge}</span>}
     </NavLink>
   );
@@ -115,7 +116,7 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
       </div>
       <div className="flex items-center gap-1">
         {action}
-        <NavLink to="/settings" className="grid size-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted md:hidden" aria-label="Settings">
+        <NavLink to="/settings" className="grid size-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted md:hidden" aria-label={t("Settings")}>
           <Settings className="size-5" />
         </NavLink>
       </div>

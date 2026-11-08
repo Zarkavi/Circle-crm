@@ -5,7 +5,7 @@ import { uid } from "./utils";
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 const bday = (offsetDays: number, year?: number) => {
   const d = addDays(new Date(), offsetDays);
-  return `${year ?? "--"}-${format(d, "MM-dd")}`;
+  return year ? `${year}-${format(d, "MM-dd")}` : `--${format(d, "MM-dd")}`;
 };
 
 /** Sample data so demo mode isn't empty. */

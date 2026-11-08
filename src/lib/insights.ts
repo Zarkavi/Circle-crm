@@ -1,5 +1,6 @@
 import type { Interaction, Job, Person, Relationship, TableName, Tables } from "./types";
 import { daysSince, nextBirthday } from "./dates";
+import { getLang, t } from "./i18n";
 
 type Db = { [K in TableName]: Tables[K][] };
 
@@ -20,7 +21,25 @@ export const RELATIONS: { value: string; label: string; inverse: string }[] = [
   { value: "other", label: "Other", inverse: "other" },
 ];
 export const relationLabel = (v: string) =>
-  v === "owner" ? "Owner" : RELATIONS.find((r) => r.value === v)?.label ?? v;
+  t(v === "owner" ? "Owner" : RELATIONS.find((r) => r.value === v)?.label ?? v);
+
+// Turkish possessive forms: "Anna'nın çocuğu"
+const TR_POSSESSIVE: Record<string, string> = {
+  child: "çocuğu", spouse: "eşi", partner: "partneri", parent: "ebeveyni", sibling: "kardeşi", relative: "akrabası",
+  friend: "arkadaşı", colleague: "iş arkadaşı", manager: "yöneticisi", report: "çalışanı", pet: "evcil hayvanı", other: "yakını",
+};
+function trGenitive(name: string) {
+  const vowels = name.toLowerCase().match(/[aeıioöuü]/g);
+  const last = vowels?.at(-1) ?? "e";
+  const v = "aı".includes(last) ? "ı" : "ei".includes(last) ? "i" : "ou".includes(last) ? "u" : "ü";
+  const endsWithVowel = /[aeıioöuü]$/i.test(name);
+  return `${name}'${endsWithVowel ? "n" : ""}${v}n`;
+}
+/** "Anna's child" / "Anna'nın çocuğu" */
+export function ownerRelation(owner: string, relation: string) {
+  if (getLang() === "tr") return `${trGenitive(owner)} ${TR_POSSESSIVE[relation] ?? relationLabel(relation).toLowerCase()}`;
+  return `${owner}'s ${relationLabel(relation).toLowerCase()}`;
+}
 export const inverseRelation = (v: string) => RELATIONS.find((r) => r.value === v)?.inverse ?? v;
 
 export const FACT_CATEGORIES: { value: string; label: string; emoji: string }[] = [
@@ -36,7 +55,10 @@ export const FACT_CATEGORIES: { value: string; label: string; emoji: string }[] 
   { value: "goals", label: "Goals", emoji: "🚀" },
   { value: "other", label: "Other", emoji: "📝" },
 ];
-export const factMeta = (v: string) => FACT_CATEGORIES.find((c) => c.value === v) ?? FACT_CATEGORIES.at(-1)!;
+export const factMeta = (v: string) => {
+  const c = FACT_CATEGORIES.find((c) => c.value === v) ?? FACT_CATEGORIES.at(-1)!;
+  return { ...c, label: t(c.label) };
+};
 
 export const INTERACTION_KINDS: { value: string; label: string; emoji: string }[] = [
   { value: "meeting", label: "Meeting", emoji: "🤝" },
@@ -47,7 +69,10 @@ export const INTERACTION_KINDS: { value: string; label: string; emoji: string }[
   { value: "event", label: "Event", emoji: "🎉" },
   { value: "other", label: "Other", emoji: "📝" },
 ];
-export const kindMeta = (v: string) => INTERACTION_KINDS.find((c) => c.value === v) ?? INTERACTION_KINDS.at(-1)!;
+export const kindMeta = (v: string) => {
+  const k = INTERACTION_KINDS.find((c) => c.value === v) ?? INTERACTION_KINDS.at(-1)!;
+  return { ...k, label: t(k.label) };
+};
 
 export const TAG_COLORS = ["violet", "sky", "emerald", "amber", "rose", "slate"] as const;
 
@@ -94,7 +119,7 @@ export function upcomingBirthdays(db: Db, withinDays = 30): UpcomingBirthday[] {
     const n = nextBirthday(r.birthday);
     const owner = db.people.find((p) => p.id === r.person_id);
     if (n && owner && n.inDays <= withinDays)
-      out.push({ key: r.id, name: r.name, personId: owner.id, via: `${firstName(owner)}'s ${relationLabel(r.relation).toLowerCase()}`, ...n });
+      out.push({ key: r.id, name: r.name, personId: owner.id, via: ownerRelation(firstName(owner), r.relation), ...n });
   }
   return out.sort((a, b) => a.inDays - b.inDays);
 }
@@ -109,6 +134,12 @@ export function keepInTouchDue(db: Db) {
     if (since === null || overdueBy >= 0) out.push({ person: p, daysSince: since, overdueBy });
   }
   return out.sort((a, b) => b.overdueBy - a.overdueBy);
+}
+
+/** "Product Lead at Stripe" / "Stripe · Product Lead" */
+export function jobLabel(job: { title?: string | null; company: string }) {
+  if (!job.title) return job.company;
+  return getLang() === "tr" ? `${job.company} · ${job.title}` : `${job.title} at ${job.company}`;
 }
 
 export const firstName = (p: Person) => p.nickname || p.full_name.split(" ")[0];
@@ -144,17 +175,17 @@ export function searchAll(db: Db, query: string): SearchHit[] {
   const tagName = new Map(db.tags.map((t) => [t.id, t.name]));
 
   for (const p of db.people) {
-    add(p.id, "Name", p.full_name, 100);
-    add(p.id, "Nickname", p.nickname, 90);
-    add(p.id, "City", p.city, 40);
-    add(p.id, "Email", p.email, 50);
-    add(p.id, "Phone", p.phone, 50);
-    add(p.id, "How we met", p.how_we_met, 30);
-    add(p.id, "Notes", p.notes, 20);
+    add(p.id, t("Name"), p.full_name, 100);
+    add(p.id, t("Nickname"), p.nickname, 90);
+    add(p.id, t("City"), p.city, 40);
+    add(p.id, t("Email"), p.email, 50);
+    add(p.id, t("Phone"), p.phone, 50);
+    add(p.id, t("How we met"), p.how_we_met, 30);
+    add(p.id, t("Notes"), p.notes, 20);
   }
   for (const j of db.jobs) {
-    add(j.person_id, j.is_current ? "Works at" : "Worked at", `${j.company}${j.title ? " · " + j.title : ""}`, 60);
-    add(j.person_id, "Work notes", j.notes, 20);
+    add(j.person_id, j.is_current ? t("Works at") : t("Worked at"), `${j.company}${j.title ? " · " + j.title : ""}`, 60);
+    add(j.person_id, t("Work notes"), j.notes, 20);
   }
   for (const r of db.relationships) {
     if (r.name) add(r.person_id, relationLabel(r.relation), `${r.name}${r.notes ? " — " + r.notes : ""}`, 70);
@@ -166,7 +197,7 @@ export function searchAll(db: Db, query: string): SearchHit[] {
     add(i.person_id, kindMeta(i.kind).label, i.notes, 30);
     add(i.person_id, kindMeta(i.kind).label, i.location, 25);
   }
-  for (const pt of db.person_tags) add(pt.person_id, "Tag", tagName.get(pt.tag_id), 65);
+  for (const pt of db.person_tags) add(pt.person_id, t("Tag"), tagName.get(pt.tag_id), 65);
 
   return [...hits.values()].sort((a, b) => b.score - a.score || a.person.full_name.localeCompare(b.person.full_name));
 }

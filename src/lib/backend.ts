@@ -8,6 +8,12 @@ export interface Backend {
   insert<T extends TableName>(table: T, row: Omit<Tables[T], "id"> & { id?: string }): Promise<Tables[T]>;
   update<T extends TableName>(table: T, id: string, patch: Partial<Tables[T]>): Promise<Tables[T]>;
   remove(table: TableName, id: string): Promise<void>;
+  insertMany<T extends TableName>(table: T, rows: (Omit<Tables[T], "id"> & { id?: string })[]): Promise<Tables[T][]>;
+  /** Stores a profile photo and returns its storage path. */
+  uploadPhoto(personId: string, blob: Blob): Promise<string>;
+  removePhoto(path: string): Promise<void>;
+  /** Turns storage paths into URLs the browser can show. */
+  photoUrls(paths: string[]): Promise<Record<string, string>>;
 }
 
 /** Talks to Supabase. Row Level Security limits every query to the signed-in user. */
@@ -37,6 +43,36 @@ export const supabaseBackend: Backend = {
   async remove(table, id) {
     const { error } = await supabase!.from(table).delete().eq("id", id);
     if (error) throw error;
+  },
+  async insertMany(table, rows) {
+    const out: any[] = [];
+    for (let i = 0; i < rows.length; i += 200) {
+      const { data, error } = await supabase!.from(table).insert(rows.slice(i, i + 200)).select();
+      if (error) throw error;
+      out.push(...data);
+    }
+    return out;
+  },
+  async uploadPhoto(personId, blob) {
+    const { data: { session } } = await supabase!.auth.getSession();
+    if (!session) throw new Error("Not signed in");
+    const path = `${session.user.id}/${personId}-${Date.now()}.jpg`;
+    const { error } = await supabase!.storage.from("avatars").upload(path, blob, { contentType: "image/jpeg", upsert: true });
+    if (error) throw error;
+    return path;
+  },
+  async removePhoto(path) {
+    await supabase!.storage.from("avatars").remove([path]);
+  },
+  async photoUrls(paths) {
+    if (!paths.length) return {};
+    const out: Record<string, string> = {};
+    for (let i = 0; i < paths.length; i += 500) {
+      const { data, error } = await supabase!.storage.from("avatars").createSignedUrls(paths.slice(i, i + 500), 60 * 60 * 24 * 7);
+      if (error) throw error;
+      for (const d of data) if (d.signedUrl && d.path) out[d.path] = d.signedUrl;
+    }
+    return out;
   },
 };
 
@@ -100,6 +136,24 @@ export const localBackend: Backend = {
       (db as any)[c.table] = (db[c.table] as any[]).filter((r) => !c.fields.some((f) => r[f] === id));
     }
     save(db);
+  },
+  async insertMany(table, rows) {
+    const out = [];
+    for (const r of rows) out.push(await localBackend.insert(table, r));
+    return out;
+  },
+  // Demo mode keeps the (small, resized) photo inline as a data URL.
+  async uploadPhoto(_personId, blob) {
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsDataURL(blob);
+    });
+  },
+  async removePhoto() {},
+  async photoUrls(paths) {
+    return Object.fromEntries(paths.map((p) => [p, p]));
   },
 };
 

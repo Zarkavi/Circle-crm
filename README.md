@@ -18,6 +18,10 @@ A private app for remembering the people in your life: their kids' names, where 
 | Reminders | One-off, monthly or yearly, plus birthdays (including kids') and "haven't talked in X days" nudges |
 | Tags & search | Tags with colours; search across every field ("who has a dog named Max?") |
 | Backup | Export or import everything as JSON |
+| Photos | Tap a person's avatar to add a photo (stored privately in Supabase Storage) |
+| Contact import | Import a .vcf file from iPhone/Android (photos, birthdays, companies), or pick contacts directly on Android |
+| Notifications | Daily push notification with birthdays (today/tomorrow, kids included) and due reminders |
+| Languages | Turkish and English, switchable in Settings |
 
 ## Try it locally (demo mode)
 
@@ -54,6 +58,14 @@ Without Supabase keys the app runs in **demo mode** with sample data saved in yo
 - **iPhone (Safari):** Share → *Add to Home Screen*
 - **Android (Chrome):** ⋮ → *Install app*
 
+## Update 2: photos and notifications
+
+1. In Supabase **SQL Editor**, run `supabase/migrations/002_photos_and_notifications.sql`.
+2. In Netlify **Project configuration → Environment variables**, add:
+   - `SUPABASE_SERVICE_ROLE_KEY`: from Supabase **Project Settings → API Keys** (the secret/service_role key). Never put it in the app code.
+   - `VAPID_PRIVATE_KEY`: the private half of the push key pair. The public half is in `src/lib/push.ts`.
+3. Redeploy. The `send-reminders` function runs hourly and sends each device one summary a day at the hour chosen in Settings.
+
 ## Project layout
 
 ```
@@ -62,5 +74,7 @@ src/lib/backend.ts       Supabase backend + localStorage demo backend
 src/lib/insights.ts      birthdays, nudges, search, relationship labels
 src/state/               auth, data store, theme
 src/pages/               Today, People, Person, Search, Reminders, Settings, Login
-src/components/          UI kit, forms, app shell
+src/components/          UI kit, forms, app shell, contact import
+src/lib/i18n*.ts         translations (English text is the key)
+netlify/functions/       hourly reminder push + test endpoint
 ```

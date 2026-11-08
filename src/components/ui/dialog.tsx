@@ -2,6 +2,7 @@ import * as D from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 
 /** Bottom sheet on phones, centered dialog on larger screens. */
 export function Sheet({ open, onOpenChange, title, description, children, footer, className }: {
@@ -28,7 +29,7 @@ export function Sheet({ open, onOpenChange, title, description, children, footer
               <D.Title className="text-lg font-semibold">{title}</D.Title>
               {description ? <D.Description className="text-sm text-muted-foreground">{description}</D.Description> : <D.Description className="sr-only">{title}</D.Description>}
             </div>
-            <D.Close className="-mr-1 grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label="Close">
+            <D.Close className="-mr-1 grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label={t("Close")}>
               <X className="size-4" />
             </D.Close>
           </div>

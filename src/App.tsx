@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/state/auth";
 import { DataProvider } from "@/state/data";
 import { ThemeProvider, useTheme } from "@/state/theme";
+import { LangProvider } from "@/state/lang";
 import { ConfirmProvider } from "@/components/confirm";
 import { QuickAddProvider } from "@/components/quick-add";
 import { Shell } from "@/components/shell";
@@ -48,12 +49,14 @@ function Toasts() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Gate />
-        </BrowserRouter>
-        <Toasts />
-      </AuthProvider>
+      <LangProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Gate />
+          </BrowserRouter>
+          <Toasts />
+        </AuthProvider>
+      </LangProvider>
     </ThemeProvider>
   );
 }

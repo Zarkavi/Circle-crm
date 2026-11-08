@@ -28,6 +28,8 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/\.netlify\//],
+        importScripts: ["push-handler.js"],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
       },
     }),
